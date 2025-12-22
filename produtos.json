@@ -1,0 +1,10 @@
+[
+    {
+        "id": 1,
+        "nome": "lapis",
+        "descricao": "lapis q escreve",
+        "preco": "R$ 1.00",
+        "validade": "20/12/2026",
+        "quantidade": 1
+    }
+]
