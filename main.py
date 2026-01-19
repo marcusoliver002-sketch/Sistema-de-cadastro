@@ -4,365 +4,320 @@ from datetime import datetime
 import json
 import os
 
-COR_FUNDO = "#d9d9d9"
-COR_TEXTO_ERRO = "#8b0000"
-COR_TEXTO_SUCESSO = "#006400"
-COR_BOTAO_AZUL = "#5b7cba"
-COR_BOTAO_VERMELHO = "#d9534f"
-COR_BOTAO_VERDE = "#28a745"
-COR_CABECALHO = "#e1e1e1"
 
-ARQUIVO_USUARIOS = "usuarios.json"
-ARQUIVO_PRODUTOS = "produtos.json"
+class Config:
+    CORES = {
+        "fundo": "#d9d9d9",
+        "erro": "#8b0000",
+        "sucesso": "#006400",
+        "btn_azul": "#5b7cba",
+        "btn_vermelho": "#d9534f",
+        "btn_verde": "#28a745",
+        "cabecalho": "#e1e1e1"
+    }
+    ARQUIVOS = {
+        "usuarios": "usuarios.json",
+        "produtos": "produtos.json"
+    }
 
-class SistemaProdutos:
-    def __init__(self):
-        self.usuarios = self.carregar_dados(ARQUIVO_USUARIOS)
-        self.produtos = self.carregar_dados(ARQUIVO_PRODUTOS)
-        
-        if self.produtos:
-            self.contador_id = max(p['id'] for p in self.produtos) + 1
-        else:
-            self.contador_id = 1
 
-        self.root = tk.Tk()
-        self.root.title("Sistema de Produtos")
-        self.root.geometry("1100x650")
-
-        self.frame_login = tk.Frame(self.root)
-        self.frame_cadastro_usuario = tk.Frame(self.root)
-        self.frame_principal = tk.Frame(self.root, bg=COR_FUNDO)
-
-        self.criar_tela_login()
-        self.criar_tela_cadastro_usuario()
-        self.criar_tela_principal()
-
-        self.frame_login.pack(fill="both", expand=True)
-        self.root.mainloop()
-
-    def carregar_dados(self, arquivo):
+class GerenciadorDados:
+    @staticmethod
+    def carregar(arquivo):
         if not os.path.exists(arquivo):
             return []
         try:
-            with open(arquivo, "r") as f:
+            with open(arquivo, "r", encoding='utf-8') as f:
                 return json.load(f)
         except:
             return []
 
-    def salvar_dados(self, dados, arquivo):
-        with open(arquivo, "w") as f:
-            json.dump(dados, f, indent=4)
+    @staticmethod
+    def salvar(dados, arquivo):
+        with open(arquivo, "w", encoding='utf-8') as f:
+            json.dump(dados, f, indent=4, ensure_ascii=False)
 
-    def criar_tela_login(self):
-        for widget in self.frame_login.winfo_children():
+
+class TelaLogin(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.usuarios = GerenciadorDados.carregar(Config.ARQUIVOS["usuarios"])
+        self.criar_interface_login()
+
+    def criar_interface_login(self):
+        for widget in self.winfo_children():
             widget.destroy()
 
-        lbl_title = tk.Label(
-            self.frame_login, text="Login de Usuário", font=("Times New Roman", 18))
-        lbl_title.pack(pady=40)
+        tk.Label(self, text="Login de Usuário", font=(
+            "Times New Roman", 18)).pack(pady=40)
 
-        frm_form = tk.Frame(self.frame_login)
+        frm_form = tk.Frame(self)
         frm_form.pack()
 
-        tk.Label(frm_form, text="Usuário:").grid(row=0, column=0, padx=5, pady=5)
-        self.ent_login_usuario = tk.Entry(frm_form)
-        self.ent_login_usuario.grid(row=0, column=1, padx=5, pady=5)
+        tk.Label(frm_form, text="Usuário:").grid(
+            row=0, column=0, padx=5, pady=5)
+        self.ent_usuario = tk.Entry(frm_form)
+        self.ent_usuario.grid(row=0, column=1, padx=5, pady=5)
 
         tk.Label(frm_form, text="Senha:").grid(row=1, column=0, padx=5, pady=5)
-        self.ent_login_senha = tk.Entry(frm_form, show="*")
-        self.ent_login_senha.grid(row=1, column=1, padx=5, pady=5)
+        self.ent_senha = tk.Entry(frm_form, show="*")
+        self.ent_senha.grid(row=1, column=1, padx=5, pady=5)
 
-        btn_entrar = tk.Button(self.frame_login, text="Entrar",
-                               command=self.fazer_login, width=15, bg=COR_BOTAO_AZUL, fg="white")
-        btn_entrar.pack(pady=10)
+        tk.Button(self, text="Entrar", command=self.fazer_login,
+                  width=15, bg=Config.CORES["btn_azul"], fg="white").pack(pady=10)
 
-        btn_criar_conta = tk.Button(self.frame_login, text="Criar Nova Conta",
-                                    command=self.exibir_tela_cadastro, width=15, bg=COR_BOTAO_VERDE, fg="white")
-        btn_criar_conta.pack(pady=5)
+        tk.Button(self, text="Criar Nova Conta", command=self.criar_interface_cadastro,
+                  width=15, bg=Config.CORES["btn_verde"], fg="white").pack(pady=5)
 
-        self.lbl_msg_login = tk.Label(self.frame_login, text="", fg="red")
-        self.lbl_msg_login.pack(pady=5)
+    def criar_interface_cadastro(self):
+        for widget in self.winfo_children():
+            widget.destroy()
 
-    def criar_tela_cadastro_usuario(self):
-        lbl_title = tk.Label(
-            self.frame_cadastro_usuario, text="Novo Usuário", font=("Times New Roman", 18))
-        lbl_title.pack(pady=40)
+        tk.Label(self, text="Novo Usuário", font=(
+            "Times New Roman", 18)).pack(pady=40)
 
-        frm_form = tk.Frame(self.frame_cadastro_usuario)
+        frm_form = tk.Frame(self)
         frm_form.pack()
 
-        tk.Label(frm_form, text="Novo Usuário:").grid(row=0, column=0, padx=5, pady=5)
-        self.ent_novo_usuario = tk.Entry(frm_form)
-        self.ent_novo_usuario.grid(row=0, column=1, padx=5, pady=5)
+        tk.Label(frm_form, text="Novo Usuário:").grid(row=0, column=0)
+        self.ent_novo_user = tk.Entry(frm_form)
+        self.ent_novo_user.grid(row=0, column=1, pady=5)
 
-        tk.Label(frm_form, text="Senha:").grid(row=1, column=0, padx=5, pady=5)
+        tk.Label(frm_form, text="Senha:").grid(row=1, column=0)
         self.ent_nova_senha = tk.Entry(frm_form, show="*")
-        self.ent_nova_senha.grid(row=1, column=1, padx=5, pady=5)
+        self.ent_nova_senha.grid(row=1, column=1, pady=5)
 
-        tk.Label(frm_form, text="Confirmar Senha:").grid(row=2, column=0, padx=5, pady=5)
-        self.ent_confirma_senha = tk.Entry(frm_form, show="*")
-        self.ent_confirma_senha.grid(row=2, column=1, padx=5, pady=5)
+        tk.Label(frm_form, text="Confirmar:").grid(row=2, column=0)
+        self.ent_confirma = tk.Entry(frm_form, show="*")
+        self.ent_confirma.grid(row=2, column=1, pady=5)
 
-        frame_botoes = tk.Frame(self.frame_cadastro_usuario)
-        frame_botoes.pack(pady=20)
+        frm_botoes = tk.Frame(self)
+        frm_botoes.pack(pady=20)
 
-        btn_salvar = tk.Button(frame_botoes, text="Salvar",
-                               command=self.salvar_novo_usuario, width=10, bg=COR_BOTAO_AZUL, fg="white")
-        btn_salvar.pack(side=tk.LEFT, padx=5)
+        tk.Button(frm_botoes, text="Salvar", command=self.salvar_usuario,
+                  bg=Config.CORES["btn_azul"], fg="white").pack(side=tk.LEFT, padx=5)
 
-        btn_voltar = tk.Button(frame_botoes, text="Voltar",
-                               command=self.voltar_login, width=10, bg=COR_BOTAO_VERMELHO, fg="white")
-        btn_voltar.pack(side=tk.LEFT, padx=5)
-
-    def exibir_tela_cadastro(self):
-        self.frame_login.pack_forget()
-        self.frame_cadastro_usuario.pack(fill="both", expand=True)
-
-    def voltar_login(self):
-        self.frame_cadastro_usuario.pack_forget()
-        self.frame_login.pack(fill="both", expand=True)
-
-    def salvar_novo_usuario(self):
-        user = self.ent_novo_usuario.get().strip()
-        senha = self.ent_nova_senha.get().strip()
-        confirma = self.ent_confirma_senha.get().strip()
-
-        if not user or not senha:
-            messagebox.showerror("Erro", "Preencha todos os campos.")
-            return
-
-        if senha != confirma:
-            messagebox.showerror("Erro", "As senhas não coincidem.")
-            return
-
-        for u in self.usuarios:
-            if u['usuario'] == user:
-                messagebox.showerror("Erro", "Usuário já existe.")
-                return
-
-        self.usuarios.append({"usuario": user, "senha": senha})
-        self.salvar_dados(self.usuarios, ARQUIVO_USUARIOS)
-        
-        messagebox.showinfo("Sucesso", "Usuário criado com sucesso!")
-        self.ent_novo_usuario.delete(0, tk.END)
-        self.ent_nova_senha.delete(0, tk.END)
-        self.ent_confirma_senha.delete(0, tk.END)
-        self.voltar_login()
+        tk.Button(frm_botoes, text="Voltar", command=self.criar_interface_login,
+                  bg=Config.CORES["btn_vermelho"], fg="white").pack(side=tk.LEFT, padx=5)
 
     def fazer_login(self):
-        usuario_digitado = self.ent_login_usuario.get().strip()
-        senha_digitada = self.ent_login_senha.get().strip()
+        user = self.ent_usuario.get().strip()
+        senha = self.ent_senha.get().strip()
 
-        login_sucesso = False
         for u in self.usuarios:
-            if u['usuario'] == usuario_digitado and u['senha'] == senha_digitada:
-                login_sucesso = True
-                break
-
-        if login_sucesso:
-            self.frame_login.pack_forget()
-            self.frame_principal.pack(fill="both", expand=True)
-            self.atualizar_tabela() 
-        else:
-            self.lbl_msg_login.config(text="Usuário ou senha incorretos.")
-
-    def criar_tela_principal(self):
-        frame_top = tk.Frame(self.frame_principal, bg=COR_FUNDO, pady=20, padx=20)
-        frame_top.pack(fill="x")
-
-        tk.Label(frame_top, text="Nome:", bg=COR_FUNDO).grid(row=0, column=0, sticky="w")
-        self.ent_nome = tk.Entry(frame_top, width=15)
-        self.ent_nome.grid(row=1, column=0, padx=5)
-
-        tk.Label(frame_top, text="Descrição:", bg=COR_FUNDO).grid(row=0, column=1, sticky="w")
-        self.ent_descricao = tk.Entry(frame_top, width=25)
-        self.ent_descricao.grid(row=1, column=1, padx=5)
-
-        tk.Label(frame_top, text="Preço (R$):", bg=COR_FUNDO).grid(row=0, column=2, sticky="w")
-        self.ent_preco = tk.Entry(frame_top, width=10)
-        self.ent_preco.grid(row=1, column=2, padx=5)
-
-        tk.Label(frame_top, text="Validade:", bg=COR_FUNDO).grid(row=0, column=3, sticky="w")
-        self.ent_validade = tk.Entry(frame_top, width=12)
-        self.ent_validade.grid(row=1, column=3, padx=5)
-        self.ent_validade.bind("<KeyRelease>", self.formatar_data) 
-
-        tk.Label(frame_top, text="Qtd:", bg=COR_FUNDO).grid(row=0, column=4, sticky="w")
-        self.ent_quantidade = tk.Entry(frame_top, width=8)
-        self.ent_quantidade.grid(row=1, column=4, padx=5)
-        
-        frame_botoes = tk.Frame(frame_top, bg=COR_FUNDO)
-        frame_botoes.grid(row=2, column=0, columnspan=5, pady=15, sticky="ew")
-
-        btn_cadastrar = tk.Button(frame_botoes, text="Cadastrar", bg=COR_BOTAO_AZUL, fg="white",
-                                  font=("Times New Roman", 10, "bold"), command=self.validar_e_cadastrar)
-        btn_cadastrar.pack(side=tk.LEFT, padx=5, fill="x", expand=True)
-
-        btn_limpar = tk.Button(frame_botoes, text="Limpar", bg=COR_BOTAO_VERMELHO, fg="white",
-                               font=("Times New Roman", 10, "bold"), command=self.limpar_campos_formulario)
-        btn_limpar.pack(side=tk.LEFT, padx=5)
-
-        btn_apagar_tudo = tk.Button(frame_botoes, text="Apagar Tudo", bg=COR_BOTAO_VERMELHO, fg="white",
-                                    font=("Times New Roman", 10, "bold"), command=self.apagar_tudo)
-        btn_apagar_tudo.pack(side=tk.LEFT, padx=5)
-
-        self.lbl_mensagem = tk.Label(frame_top, text="", bg=COR_FUNDO, font=("Times New Roman", 10))
-        self.lbl_mensagem.grid(row=3, column=0, columnspan=5, sticky="w", padx=5)
-
-        container = tk.Frame(self.frame_principal, bg="gray", bd=1)
-        container.pack(fill="both", expand=True, padx=10, pady=10)
-
-        self.canvas_tabela = tk.Canvas(container, bg="white")
-        scrollbar = tk.Scrollbar(container, orient="vertical", command=self.canvas_tabela.yview)
-        
-        self.frame_grade = tk.Frame(self.canvas_tabela, bg="white")
-
-        self.frame_grade.bind("<Configure>", 
-            lambda e: self.canvas_tabela.configure(scrollregion=self.canvas_tabela.bbox("all")))
-
-        self.canvas_tabela.create_window((0, 0), window=self.frame_grade, anchor="nw")
-        self.canvas_tabela.configure(yscrollcommand=scrollbar.set)
-
-        self.canvas_tabela.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-    
-    def formatar_data(self, event):
-        if event.keysym.lower() == "backspace": return
-        texto = self.ent_validade.get()
-        if len(texto) == 2 or len(texto) == 5:
-            self.ent_validade.insert(tk.END, "/")
-        if len(texto) > 10:
-            self.ent_validade.delete(10, tk.END)
-
-    def mostrar_mensagem(self, mensagem, tipo):
-        cor = COR_TEXTO_SUCESSO if tipo == "sucesso" else COR_TEXTO_ERRO
-        self.lbl_mensagem.config(text=mensagem, fg=cor)
-        self.root.after(3000, lambda: self.lbl_mensagem.config(text=""))
-
-    def validar_nome_unico(self, nome):
-        for produto in self.produtos:
-            if produto['nome'].lower() == nome.lower():
-                return False
-        return True
-
-    def validar_e_cadastrar(self):
-        nome = self.ent_nome.get().strip()
-        descricao = self.ent_descricao.get().strip()
-        preco_str = self.ent_preco.get().strip().replace(",", ".")
-        validade_str = self.ent_validade.get().strip()
-        quantidade_str = self.ent_quantidade.get().strip()
-
-        if not nome or not descricao or not preco_str or not validade_str or not quantidade_str:
-            self.mostrar_mensagem("Preencha todos os campos.", "erro")
-            return
-
-        if len(nome) < 3:
-            self.mostrar_mensagem("Nome deve ter min. 3 caracteres.", "erro")
-            return
-
-        if not self.validar_nome_unico(nome):
-            self.mostrar_mensagem(f"Erro: O produto '{nome}' já existe.", "erro")
-            return
-        
-        try:
-            preco = float(preco_str)
-            if preco <= 0: raise ValueError
-        except ValueError:
-            self.mostrar_mensagem("Preço inválido.", "erro")
-            return
-
-        if not quantidade_str.isdigit() or int(quantidade_str) <= 0:
-            self.mostrar_mensagem("Quantidade inválida.", "erro")
-            return
-
-        try:
-            data_validade = datetime.strptime(validade_str, "%d/%m/%Y")
-            hoje = datetime.now()
-            if data_validade <= hoje.replace(hour=0, minute=0, second=0, microsecond=0):
-                self.mostrar_mensagem("Data vencida.", "erro")
+            if u['usuario'] == user and u['senha'] == senha:
+                self.controller.mostrar_tela("TelaPrincipal")
                 return
-        except ValueError:
-            self.mostrar_mensagem("Data inválida.", "erro")
+
+        messagebox.showerror("Erro", "Usuário ou senha incorretos.")
+
+    def salvar_usuario(self):
+        user = self.ent_novo_user.get().strip()
+        senha = self.ent_nova_senha.get().strip()
+        confirma = self.ent_confirma.get().strip()
+
+        if not user or not senha:
+            messagebox.showerror("Erro", "Preencha tudo.")
+            return
+        if senha != confirma:
+            messagebox.showerror("Erro", "Senhas não conferem.")
             return
 
-        self.cadastrar_produto(nome, descricao, preco, validade_str, quantidade_str)
-
-    def cadastrar_produto(self, nome, descricao, preco, validade, quantidade):
-        novo_produto = {
-            "id": self.contador_id,
-            "nome": nome,
-            "descricao": descricao,
-            "preco": f"R$ {preco:.2f}",
-            "validade": validade,
-            "quantidade": int(quantidade)
-        }
-
-        self.produtos.append(novo_produto)
-        self.contador_id += 1
-        self.salvar_dados(self.produtos, ARQUIVO_PRODUTOS)
-
-        self.atualizar_tabela()
-        self.mostrar_mensagem("Sucesso!", "sucesso")
-        self.limpar_campos_formulario()
-    
-    def apagar_tudo(self):
-        resposta = messagebox.askyesno(
-            "Confirmação",
-            "Tem certeza que deseja apagar TODOS os produtos?"
-        )
-
-        if not resposta:
+        if any(u['usuario'] == user for u in self.usuarios):
+            messagebox.showerror("Erro", "Usuário já existe.")
             return
 
-        self.produtos.clear()
+        self.usuarios.append({"usuario": user, "senha": senha})
+        GerenciadorDados.salvar(self.usuarios, Config.ARQUIVOS["usuarios"])
+        messagebox.showinfo("Sucesso", "Usuário criado!")
+        self.criar_interface_login()
+
+
+class TelaPrincipal(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg=Config.CORES["fundo"])
+        self.controller = controller
+        self.produtos = []
         self.contador_id = 1
-        self.salvar_dados(self.produtos, ARQUIVO_PRODUTOS)
+
+        self.criar_widgets()
+        self.carregar_produtos()
+
+    def carregar_produtos(self):
+        self.produtos = GerenciadorDados.carregar(Config.ARQUIVOS["produtos"])
+        if self.produtos:
+            self.contador_id = max(p['id'] for p in self.produtos) + 1
         self.atualizar_tabela()
 
-        self.mostrar_mensagem("Todos os produtos foram apagados.", "sucesso")
+    def criar_widgets(self):
+        frm_top = tk.Frame(self, bg=Config.CORES["fundo"], pady=20)
+        frm_top.pack(fill="x")
 
-    def limpar_campos_formulario(self):
-        self.ent_nome.delete(0, tk.END)
-        self.ent_descricao.delete(0, tk.END)
-        self.ent_preco.delete(0, tk.END)
-        self.ent_validade.delete(0, tk.END)
-        self.ent_quantidade.delete(0, tk.END)
-        self.ent_nome.focus_set()
+        container_inputs = tk.Frame(frm_top, bg=Config.CORES["fundo"])
+        container_inputs.pack(fill="x", padx=20)
+
+        campos = [("Nome:", 1), ("Descrição:", 2),
+                  ("Preço (R$):", 1), ("Validade:", 1), ("Qtd:", 1)]
+        self.entradas = {}
+
+        for i, (texto, peso) in enumerate(campos):
+            container_inputs.grid_columnconfigure(i, weight=peso)
+
+            lbl = tk.Label(container_inputs, text=texto,
+                           bg=Config.CORES["fundo"], font=("Arial", 10))
+            lbl.grid(row=0, column=i, sticky="w", padx=5)
+
+            ent = tk.Entry(container_inputs, font=("Arial", 10))
+            ent.grid(row=1, column=i, sticky="ew", padx=5, pady=(0, 5))
+
+            chave = texto.replace(":", "").replace(" (R$)", "")
+            self.entradas[chave] = ent
+
+        self.entradas["Validade"].bind("<KeyRelease>", self.formatar_data)
+
+        container_botoes = tk.Frame(frm_top, bg=Config.CORES["fundo"])
+        container_botoes.pack(pady=15)
+
+        tk.Button(container_botoes, text="Cadastrar", bg=Config.CORES["btn_azul"], fg="white", font=("Arial", 10, "bold"),
+                  command=self.cadastrar, width=15).pack(side=tk.LEFT, padx=10)
+
+        tk.Button(container_botoes, text="Limpar", bg=Config.CORES["btn_vermelho"], fg="white", font=("Arial", 10, "bold"),
+                  command=self.limpar_campos, width=10).pack(side=tk.LEFT, padx=10)
+
+        tk.Button(container_botoes, text="Apagar Tudo", bg=Config.CORES["btn_vermelho"], fg="white", font=("Arial", 10, "bold"),
+                  command=self.apagar_tudo, width=12).pack(side=tk.LEFT, padx=10)
+
+        tk.Button(container_botoes, text="Sair", command=lambda: self.controller.mostrar_tela("TelaLogin"),
+                  width=10, font=("Arial", 10)).pack(side=tk.LEFT, padx=10)
+
+        self.lbl_msg = tk.Label(
+            frm_top, text="", bg=Config.CORES["fundo"], font=("Arial", 10, "bold"))
+        self.lbl_msg.pack(pady=5)
+
+        container_tabela = tk.Frame(self, bg=Config.CORES["fundo"])
+        container_tabela.pack(fill="both", expand=True, padx=20, pady=10)
+
+        colunas = ("ID", "Nome", "Descrição", "Preço", "Validade", "Qtd")
+        self.tree = ttk.Treeview(
+            container_tabela, columns=colunas, show="headings")
+
+        larguras = [50, 200, 350, 100, 100, 80]
+        for col, larg in zip(colunas, larguras):
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=larg, anchor="center")
+
+        scrollbar = ttk.Scrollbar(
+            container_tabela, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+    def formatar_data(self, event):
+        if event.keysym.lower() == "backspace":
+            return
+        ent = self.entradas["Validade"]
+        texto = ent.get()
+        if len(texto) in (2, 5):
+            ent.insert(tk.END, "/")
+        elif len(texto) > 10:
+            ent.delete(10, tk.END)
 
     def atualizar_tabela(self):
-        for widget in self.frame_grade.winfo_children():
-            widget.destroy()
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-        config_colunas = [
-            ("ID", 5), 
-            ("Nome", 25), 
-            ("Descrição", 45), 
-            ("Preço", 15), 
-            ("Validade", 15), 
-            ("Qtd.", 8)
-        ]
+        for p in self.produtos:
+            self.tree.insert("", "end", values=(
+                p['id'], p['nome'], p['descricao'], p['preco'], p['validade'], p['quantidade']
+            ))
 
-        for col, (titulo, largura) in enumerate(config_colunas):
-            lbl = tk.Label(self.frame_grade, text=titulo, width=largura, 
-                           bg=COR_CABECALHO, font=("Arial", 10, "bold"),
-                           relief="solid", borderwidth=1)
-            lbl.grid(row=0, column=col, sticky="nsew")
+    def limpar_campos(self):
+        for ent in self.entradas.values():
+            ent.delete(0, tk.END)
+        self.entradas["Nome"].focus_set()
 
-        for i, p in enumerate(self.produtos):
-            linha = i + 1
-            valores = [p['id'], p['nome'], p['descricao'], p['preco'], p['validade'], p['quantidade']]
-            
-            for col, valor in enumerate(valores):
-                largura = config_colunas[col][1]
-                
-                alinhamento = "center"
-                if col == 1 or col == 2:
-                    alinhamento = "w"
+    def cadastrar(self):
+        dados = {k: v.get().strip() for k, v in self.entradas.items()}
 
-                lbl = tk.Label(self.frame_grade, text=valor, width=largura, 
-                               bg="white", anchor=alinhamento,
-                               relief="solid", borderwidth=1)
-                lbl.grid(row=linha, column=col, sticky="nsew")
+        if any(not v for v in dados.values()):
+            self.msg("Preencha todos os campos", "erro")
+            return
+
+        try:
+            preco = float(dados["Preço"].replace(",", "."))
+            qtd = int(dados["Qtd"])
+
+            data_validade = datetime.strptime(dados["Validade"], "%d/%m/%Y")
+            if data_validade <= datetime.now():
+                self.msg("Produto vencido ou data inválida", "erro")
+                return
+
+        except ValueError:
+            self.msg("Erro nos valores numéricos ou data", "erro")
+            return
+
+        novo_prod = {
+            "id": self.contador_id,
+            "nome": dados["Nome"],
+            "descricao": dados["Descrição"],
+            "preco": f"R$ {preco:.2f}",
+            "validade": dados["Validade"],
+            "quantidade": qtd
+        }
+
+        self.produtos.append(novo_prod)
+        self.contador_id += 1
+        GerenciadorDados.salvar(self.produtos, Config.ARQUIVOS["produtos"])
+
+        self.atualizar_tabela()
+        self.limpar_campos()
+        self.msg("Produto Cadastrado!", "sucesso")
+
+    def apagar_tudo(self):
+        if messagebox.askyesno("Confirmar", "Deseja apagar todos os produtos?"):
+            self.produtos = []
+            self.contador_id = 1
+            GerenciadorDados.salvar(self.produtos, Config.ARQUIVOS["produtos"])
+            self.atualizar_tabela()
+
+    def msg(self, texto, tipo):
+        cor = Config.CORES["sucesso"] if tipo == "sucesso" else Config.CORES["erro"]
+        self.lbl_msg.config(text=texto, fg=cor)
+        self.after(3000, lambda: self.lbl_msg.config(text=""))
+
+
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Sistema de Produtos OOP")
+        self.geometry("1100x650")
+
+        self.container = tk.Frame(self)
+        self.container.pack(fill="both", expand=True)
+
+        self.frames = {}
+
+        for F in (TelaLogin, TelaPrincipal):
+            nome_classe = F.__name__
+            frame = F(parent=self.container, controller=self)
+            self.frames[nome_classe] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
+
+        self.mostrar_tela("TelaLogin")
+
+    def mostrar_tela(self, nome_tela):
+        frame = self.frames[nome_tela]
+        frame.tkraise()
+
+        if nome_tela == "TelaPrincipal":
+            frame.carregar_produtos()
+
 
 if __name__ == "__main__":
-    SistemaProdutos()
+    app = App()
+    app.mainloop()
